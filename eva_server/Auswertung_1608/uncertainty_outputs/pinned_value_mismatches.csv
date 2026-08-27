@@ -1,3 +1,0 @@
-source,model_label,metric,mean,pinned_table_value,mean_minus_pinned,n
-final_test,"Multi-output Tversky loss, ReduceLROnPlateau factor 0.5 evaluation",Dice,0.9255456356376409,0.93,-0.004454364362359131,20000
-final_test,"Multi-output Tversky loss, ReduceLROnPlateau factor 0.5 evaluation",RMSE,0.04593949127960945,0.046,-6.050872039054661e-05,20000
