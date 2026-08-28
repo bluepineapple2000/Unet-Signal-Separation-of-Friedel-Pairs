@@ -1,0 +1,4 @@
+[data]
+# Local path to the augmented ESRF DCT HDF5 file used by multi-output/train_tversky.py.
+# The file is not included in this repository.
+input_h5 = "data_esrf/augmented_spots_train.h5"

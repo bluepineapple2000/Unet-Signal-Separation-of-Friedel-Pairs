@@ -27,7 +27,7 @@ from unet_model import UNet
 
 
 dir_checkpoint = Path("./checkpoints/")
-dir_h5_spot_segmentation = Path("./data/augmented_spot_patches_with_masks.h5")
+dir_h5_spot_segmentation = Path("./data/augmented_spots_test.h5")
 dir_runs = Path("./runs/")
 dir_previews = Path("./prediction_previews/")
 dir_loss_diagnostics = Path("./loss_diagnostics/")
@@ -50,7 +50,7 @@ def configured_input_h5(paths_file: Path) -> Path:
     input_path = Path(input_h5).expanduser()
     if input_path.is_absolute():
         return input_path
-    return paths_file.parent / input_pathsasdfil
+    return paths_file.parent / input_path
 
 
 class TrainingDebugRecorder:
@@ -643,6 +643,7 @@ def train_model(
     preview_samples: int = 4,
     loss_diagnostic_dir: Path = dir_loss_diagnostics,
     loss_diagnostic_interval: int = 50,
+    checkpoint_dir: Path = dir_checkpoint,
     early_stopping_patience: int = 10,
     debug_recorder: TrainingDebugRecorder | None = None,
 ):
@@ -684,6 +685,7 @@ def train_model(
             preview_dir=str(run_preview_dir),
             loss_diagnostic_dir=str(run_loss_diagnostic_dir),
             loss_diagnostic_interval=loss_diagnostic_interval,
+            checkpoint_dir=str(checkpoint_dir),
             epochs=epochs,
             batch_size=batch_size,
             learning_rate=learning_rate,
@@ -924,8 +926,8 @@ def train_model(
         if save_checkpoint:
             if debug_recorder is not None:
                 debug_recorder.update(phase="saving_checkpoint", epoch=epoch, epochs=epochs, global_step=global_step)
-            dir_checkpoint.mkdir(parents=True, exist_ok=True)
-            torch.save(model.state_dict(), str(dir_checkpoint / f"checkpoint_epoch{epoch}.pth"))
+            checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            torch.save(model.state_dict(), str(checkpoint_dir / f"checkpoint_epoch{epoch}.pth"))
             logging.info("Checkpoint %d saved!", epoch)
 
         if (
@@ -945,8 +947,8 @@ def train_model(
         model.load_state_dict(best_model_state)
         logging.info("Restored best model weights from epoch %d", best_epoch)
 
-    dir_checkpoint.mkdir(parents=True, exist_ok=True)
-    final_model_file = dir_checkpoint / safe_model_file_name(run_name)
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    final_model_file = checkpoint_dir / safe_model_file_name(run_name)
     if debug_recorder is not None:
         debug_recorder.update(
             phase="saving_final_model",
@@ -1009,6 +1011,7 @@ def get_args():
         default=None,
         help="Override input HDF5 file from project_paths.toml",
     )
+    parser.add_argument("--checkpoint-dir", type=str, default=str(dir_checkpoint), help="Directory for saved model checkpoints")
     parser.add_argument("--log-dir", type=str, default=str(dir_runs), help="TensorBoard root log directory")
     parser.add_argument("--run-name", type=str, default=None, help="Optional TensorBoard run name")
     parser.add_argument("--preview-dir", type=str, default=str(dir_previews), help="Directory for saved prediction PNG previews")
@@ -1042,6 +1045,7 @@ if __name__ == "__main__":
         state_file=str(state_file),
         paths_file=str(paths_file),
         input_h5_file=str(input_h5_file),
+        checkpoint_dir=str(args.checkpoint_dir),
     )
 
     try:
@@ -1099,6 +1103,7 @@ if __name__ == "__main__":
                 preview_samples=args.preview_samples,
                 loss_diagnostic_dir=Path(args.loss_diagnostic_dir),
                 loss_diagnostic_interval=args.loss_diagnostic_interval,
+                checkpoint_dir=Path(args.checkpoint_dir),
                 early_stopping_patience=args.early_stopping_patience,
                 debug_recorder=debug_recorder,
             )
@@ -1126,6 +1131,7 @@ if __name__ == "__main__":
                 preview_samples=args.preview_samples,
                 loss_diagnostic_dir=Path(args.loss_diagnostic_dir),
                 loss_diagnostic_interval=args.loss_diagnostic_interval,
+                checkpoint_dir=Path(args.checkpoint_dir),
                 early_stopping_patience=args.early_stopping_patience,
                 debug_recorder=debug_recorder,
             )

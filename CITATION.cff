@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+type: software
+title: "Diffraction Spot Separation Experiments"
+authors:
+  - family-names: "Böhm"
+    given-names: "Natalie"
+    email: "github@natalieboehm.de"
+abstract: "AI-based Signal Separation of Friedel Pairs in Crystallography."
+version: "1.0.0"
+license: MIT
+repository-code: "https://github.com/bluepineapple2000/Unet-Signal-Separation-of-Friedel-Pairs"
+keywords:
+  - diffraction
+  - DCT
+  - ESRF
+  - U-Net
+  - spot separation
+# Optional before release/archive:
+# doi: "10.5281/zenodo.TODO"
+# date-released: "YYYY-MM-DD"
+# preferred-citation:
+#   type: thesis
+#   title: "TODO: Thesis title"
+#   authors:
+#     - family-names: "TODO: Family name"
+#       given-names: "TODO: Given name"
+#   year: TODO

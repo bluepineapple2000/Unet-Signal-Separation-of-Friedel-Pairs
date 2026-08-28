@@ -1,11 +1,38 @@
-checkpoints/
+# Python
 __pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+
+# Local data and private preprocessing outputs
 data/
-prediction_previews/
+data_esrf/
+data_*_spots/
+*.h5
+*.hdf5
+*.npy
+*.npz
+
+# Training and evaluation artifacts
+checkpoints/
+*.pth
+*.pt
 runs/
-extract_spots/IN718_twins_frame_1148_overlap.ipynb
-extract_spots/extract_IN718_twins_frame_1148.py
+prediction_previews/
+loss_diagnostics/
+debug_logs/
 output/
-project_paths.toml
 serverdaten/
 evaluation/
+
+# Machine-specific path configuration
+project_paths.toml
+training_paths.toml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Historical/local extraction scratch files
+extract_spots/IN718_twins_frame_1148_overlap.ipynb
+extract_spots/extract_IN718_twins_frame_1148.py
