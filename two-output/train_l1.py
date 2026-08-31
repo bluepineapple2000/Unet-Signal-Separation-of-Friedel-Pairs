@@ -1,8 +1,15 @@
 import argparse
 import logging
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+EXPERIMENT_NAME = f"{SCRIPT_DIR.name}/{Path(__file__).stem.removeprefix('train_')}"
 
 import h5py
 import matplotlib
@@ -20,10 +27,10 @@ from tqdm import tqdm
 from unet_model import UNet
 
 
-dir_checkpoint = Path("./checkpoints/")
-dir_h5_spot_segmentation = Path("../data_esrf/augmented_spot_patches.h5")
-dir_runs = Path("./runs/")
-dir_previews = Path("./prediction_previews/")
+dir_checkpoint = PROJECT_ROOT / "checkpoints" / EXPERIMENT_NAME
+dir_h5_spot_segmentation = PROJECT_ROOT / "data" / "augmented_spots_train.h5"
+dir_runs = PROJECT_ROOT / "runs" / EXPERIMENT_NAME
+dir_previews = PROJECT_ROOT / "prediction_previews" / EXPERIMENT_NAME
 
 
 class H5SpotSeparationDataset(Dataset):
@@ -242,6 +249,7 @@ def train_model(
     run_name: str | None = None,
     preview_dir: Path = dir_previews,
     preview_samples: int = 4,
+    checkpoint_dir: Path = dir_checkpoint,
 ):
     dataset = H5SpotSeparationDataset(h5_file, img_scale)
 
@@ -393,8 +401,8 @@ def train_model(
         logging.info("Epoch %d validation separation L1 loss: %s", epoch, val_score)
 
         if save_checkpoint:
-            dir_checkpoint.mkdir(parents=True, exist_ok=True)
-            torch.save(model.state_dict(), str(dir_checkpoint / f"checkpoint_epoch{epoch}.pth"))
+            checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            torch.save(model.state_dict(), str(checkpoint_dir / f"checkpoint_epoch{epoch}.pth"))
             logging.info("Checkpoint %d saved!", epoch)
 
     writer.close()
@@ -418,6 +426,7 @@ def get_args():
     parser.add_argument("--amp", action="store_true", default=False, help="Use mixed precision")
     parser.add_argument("--bilinear", action="store_true", default=False, help="Use bilinear upsampling")
     parser.add_argument("--h5-file", type=str, default=str(dir_h5_spot_segmentation), help="Path to HDF5 file")
+    parser.add_argument("--checkpoint-dir", type=str, default=str(dir_checkpoint), help="Directory for saved model checkpoints")
     parser.add_argument("--log-dir", type=str, default=str(dir_runs), help="TensorBoard root log directory")
     parser.add_argument("--run-name", type=str, default=None, help="Optional TensorBoard run name")
     parser.add_argument("--preview-dir", type=str, default=str(dir_previews), help="Directory for saved prediction PNG previews")
@@ -465,6 +474,7 @@ if __name__ == "__main__":
             run_name=args.run_name,
             preview_dir=Path(args.preview_dir),
             preview_samples=args.preview_samples,
+            checkpoint_dir=Path(args.checkpoint_dir),
         )
     except torch.cuda.OutOfMemoryError:
         logging.error(
@@ -487,4 +497,5 @@ if __name__ == "__main__":
             run_name=args.run_name,
             preview_dir=Path(args.preview_dir),
             preview_samples=args.preview_samples,
+            checkpoint_dir=Path(args.checkpoint_dir),
         )

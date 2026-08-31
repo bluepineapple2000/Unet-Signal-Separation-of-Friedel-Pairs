@@ -10,6 +10,12 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+EXPERIMENT_NAME = f"{SCRIPT_DIR.name}/{Path(__file__).stem.removeprefix('train_')}"
+
 import h5py
 import matplotlib
 
@@ -26,15 +32,13 @@ from tqdm import tqdm
 from unet_model import UNet
 
 
-dir_paths_file = Path("./training_paths.toml")
+dir_paths_file = PROJECT_ROOT / "training_paths.toml"
 default_path_profile = "pin"
-dir_checkpoint = Path("./checkpoints/")
-dir_h5_spot_segmentation = (
-    Path(__file__).resolve().parent.parent / "data_esrf" / "augmented_spots_train.h5"
-)
-dir_runs = Path("./runs/")
-dir_previews = Path("./prediction_previews/")
-dir_debug = Path("./debug_logs/")
+dir_checkpoint = PROJECT_ROOT / "checkpoints" / EXPERIMENT_NAME
+dir_h5_spot_segmentation = PROJECT_ROOT / "data" / "augmented_spots_train.h5"
+dir_runs = PROJECT_ROOT / "runs" / EXPERIMENT_NAME
+dir_previews = PROJECT_ROOT / "prediction_previews" / EXPERIMENT_NAME
+dir_debug = PROJECT_ROOT / "debug_logs" / EXPERIMENT_NAME
 
 
 def _resolve_config_path(path_value: str | Path, base_dir: Path) -> Path:

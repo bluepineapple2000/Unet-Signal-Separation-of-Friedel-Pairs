@@ -9,6 +9,12 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+EXPERIMENT_NAME = f"{SCRIPT_DIR.name}/{Path(__file__).stem.removeprefix('train_')}"
+
 import h5py
 import matplotlib
 
@@ -25,11 +31,11 @@ from tqdm import tqdm
 from unet_model import UNet
 
 
-dir_checkpoint = Path("./checkpoints/")
-dir_h5_spot_segmentation = Path("./data/augmented_spot_patches_with_masks.h5")
-dir_runs = Path("./runs/")
-dir_previews = Path("./prediction_previews/")
-dir_debug = Path("./debug_logs/")
+dir_checkpoint = PROJECT_ROOT / "checkpoints" / EXPERIMENT_NAME
+dir_h5_spot_segmentation = PROJECT_ROOT / "data" / "augmented_spots_train.h5"
+dir_runs = PROJECT_ROOT / "runs" / EXPERIMENT_NAME
+dir_previews = PROJECT_ROOT / "prediction_previews" / EXPERIMENT_NAME
+dir_debug = PROJECT_ROOT / "debug_logs" / EXPERIMENT_NAME
 
 
 class TrainingDebugRecorder:
@@ -439,6 +445,7 @@ def train_model(
     run_name: str | None = None,
     preview_dir: Path = dir_previews,
     preview_samples: int = 4,
+    checkpoint_dir: Path = dir_checkpoint,
     debug_recorder: TrainingDebugRecorder | None = None,
 ):
     if debug_recorder is not None:
@@ -474,6 +481,7 @@ def train_model(
             run_name=run_name,
             run_dir=str(run_dir),
             preview_dir=str(run_preview_dir),
+            checkpoint_dir=str(checkpoint_dir),
             epochs=epochs,
             batch_size=batch_size,
             learning_rate=learning_rate,
@@ -670,12 +678,12 @@ def train_model(
         if save_checkpoint:
             if debug_recorder is not None:
                 debug_recorder.update(phase="saving_checkpoint", epoch=epoch, epochs=epochs, global_step=global_step)
-            dir_checkpoint.mkdir(parents=True, exist_ok=True)
-            torch.save(model.state_dict(), str(dir_checkpoint / f"checkpoint_epoch{epoch}.pth"))
+            checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            torch.save(model.state_dict(), str(checkpoint_dir / f"checkpoint_epoch{epoch}.pth"))
             logging.info("Checkpoint %d saved!", epoch)
 
-    dir_checkpoint.mkdir(parents=True, exist_ok=True)
-    final_model_file = dir_checkpoint / safe_model_file_name(run_name)
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    final_model_file = checkpoint_dir / safe_model_file_name(run_name)
     if debug_recorder is not None:
         debug_recorder.update(
             phase="saving_final_model",
@@ -715,6 +723,7 @@ def get_args():
     parser.add_argument("--amp", action="store_true", default=False, help="Use mixed precision")
     parser.add_argument("--bilinear", action="store_true", default=False, help="Use bilinear upsampling")
     parser.add_argument("--h5-file", type=str, default=str(dir_h5_spot_segmentation), help="Path to HDF5 file")
+    parser.add_argument("--checkpoint-dir", type=str, default=str(dir_checkpoint), help="Directory for saved model checkpoints")
     parser.add_argument("--log-dir", type=str, default=str(dir_runs), help="TensorBoard root log directory")
     parser.add_argument("--run-name", type=str, default=None, help="Optional TensorBoard run name")
     parser.add_argument("--preview-dir", type=str, default=str(dir_previews), help="Directory for saved prediction PNG previews")
@@ -730,6 +739,10 @@ if __name__ == "__main__":
     debug_recorder.update(
         phase="arguments_parsed",
         command=" ".join(sys.argv),
+        h5_file=str(args.h5_file),
+        checkpoint_dir=str(args.checkpoint_dir),
+        log_dir=str(args.log_dir),
+        preview_dir=str(args.preview_dir),
         debug_log_file=str(debug_log_file),
         state_file=str(state_file),
     )
@@ -782,6 +795,7 @@ if __name__ == "__main__":
                 run_name=args.run_name,
                 preview_dir=Path(args.preview_dir),
                 preview_samples=args.preview_samples,
+                checkpoint_dir=Path(args.checkpoint_dir),
                 debug_recorder=debug_recorder,
             )
         except torch.cuda.OutOfMemoryError as exc:
@@ -806,6 +820,7 @@ if __name__ == "__main__":
                 run_name=args.run_name,
                 preview_dir=Path(args.preview_dir),
                 preview_samples=args.preview_samples,
+                checkpoint_dir=Path(args.checkpoint_dir),
                 debug_recorder=debug_recorder,
             )
     except Exception as exc:
