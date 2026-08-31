@@ -9,7 +9,7 @@ This repository contains U-Net based experiments from a master thesis project on
 - `multi-output/`: multi-output experiments. The network predicts two spot masks and two spot-intensity channels.
 - `eva-notebooks/`: evaluation notebooks for model metrics, uncertainty estimates, and visual thesis examples.
 - `augment_data/`: augmentation notebook used to create synthetic overlapping spot patches from detected isolated spots.
-- `unet_model.py`, `unet_parts.py`: shared U-Net implementation used by the root and multi-output/two-output scripts.
+- `unet_model.py`, `unet_parts.py`: canonical shared U-Net implementation used by all training scripts. The scripts in subdirectories prepend the repository root to `sys.path` so these root files are imported instead of older local copies.
 - `architecture_notes.md`: working notes on the training setup and loss design.
 
 ## Terminology
@@ -21,7 +21,7 @@ Some older file names and notebooks use `pin`. In this project, `pin` and `multi
 The best model described for the thesis was trained with:
 
 ```bash
-python multi-output/train_tversky.py
+uv run python multi-output/train_tversky.py
 ```
 
 The multi-output Tversky script trains a U-Net with one grayscale input channel and four output channels:
@@ -34,21 +34,16 @@ The loss is permutation-invariant with respect to the two spots, so the two outp
 Example training command:
 
 ```bash
-python multi-output/train_tversky.py \
-  --h5-file /path/to/augmented_spots_train.h5 \
+uv run python multi-output/train_tversky.py \
   --epochs 200 \
   --batch-size 20 \
   --learning-rate 0.0002 \
   --scale 1.0 \
   --base-features 32 \
-  --amp \
-  --checkpoint-dir checkpoints/multi-output \
-  --log-dir runs/multi-output \
-  --preview-dir prediction_previews/multi-output \
-  --loss-diagnostic-dir loss_diagnostics/multi-output
+  --amp
 ```
 
-Adjust batch size, mixed precision, and `--base-features` to match the available GPU memory.
+By default, training scripts read `data/augmented_spots_train.h5`. The `data/augmented_spots_test.h5` file is reserved for testing/evaluation and is not used as a training default. Adjust batch size, mixed precision, and `--base-features` to match the available GPU memory.
 
 ## Data requirements
 
@@ -77,30 +72,35 @@ The augmentation notebook in `augment_data/augmentation.ipynb` documents the loc
 
 ## Installation
 
-Create a Python environment with Python 3.11 or newer. For GPU training, install a PyTorch build that matches your CUDA setup. One possible setup is:
+Create a Python environment with Python 3.11 or newer. The project is set up for `uv`:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e ".[notebooks]"
+uv sync --extra notebooks
 ```
 
-If PyTorch installation fails or installs the wrong CUDA build, install PyTorch manually first using the wheel/index recommended for your system, then rerun the editable install command.
+All `train_*.py` scripts are implemented with PyTorch rather than TensorFlow. They also use PyTorch's TensorBoard writer for training logs.
 
-This repository contains a `uv.lock` file from the development environment, but it has not been regenerated after the publication cleanup. Regenerate it before relying on locked installs.
+Run scripts with `uv run ...`, or activate the environment first with `source .venv/bin/activate` and then use `python ...`. If the lock file is stale after dependency changes, regenerate it with `uv lock --upgrade` and rerun `uv sync --extra notebooks`. For GPU training, make sure the PyTorch build in `pyproject.toml` matches the CUDA setup on the machine.
 
 ## Path configuration
 
-Most scripts accept explicit path arguments such as `--h5-file`, `--checkpoint-dir`, `--log-dir`, `--preview-dir`, and `--debug-dir`. Prefer those arguments when running on a new machine or cluster.
+Training scripts default to project-level paths so they behave the same whether launched from the repository root or from inside a subdirectory. The default input is `data/augmented_spots_train.h5`. Outputs are grouped by script, for example `multi-output/train_tversky.py` writes to:
 
-For `multi-output/train_tversky.py`, you can also copy `project_paths.example.toml` to `project_paths.toml` and edit the HDF5 path:
+```text
+checkpoints/multi-output/tversky/
+runs/multi-output/tversky/
+prediction_previews/multi-output/tversky/
+loss_diagnostics/multi-output/tversky/
+debug_logs/multi-output/tversky/
+```
+
+Most scripts accept explicit path arguments such as `--h5-file`, `--checkpoint-dir`, `--log-dir`, `--preview-dir`, and `--debug-dir`. Use those arguments to override the defaults on a new machine or cluster. `multi-output/train_tversky.py` can also read `project_paths.toml`; copy `project_paths.example.toml` and edit `input_h5` if needed:
 
 ```bash
 cp project_paths.example.toml project_paths.toml
 ```
 
-`project_paths.toml` is ignored by Git because it is expected to contain machine-specific paths.
+`project_paths.toml` and `training_paths.toml` are ignored by Git because they are expected to contain machine-specific paths.
 
 ## Evaluation notebooks
 

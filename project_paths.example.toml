@@ -1,4 +1,4 @@
 [data]
-# Local path to the augmented ESRF DCT HDF5 file used by multi-output/train_tversky.py.
-# The file is not included in this repository.
-input_h5 = "data_esrf/augmented_spots_train.h5"
+# Local path to the augmented ESRF DCT HDF5 training file used by multi-output/train_tversky.py.
+# Keep augmented_spots_test.h5 for testing/evaluation, not training.
+input_h5 = "data/augmented_spots_train.h5"
